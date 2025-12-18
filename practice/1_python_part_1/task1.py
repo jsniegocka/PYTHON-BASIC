@@ -15,4 +15,9 @@ from typing import List, Any
 
 
 def delete_from_list(list_to_clean: List, item_to_delete: Any) -> List:
-    ...
+    indices = [i for i, x in enumerate(list_to_clean) if x == item_to_delete]
+    if not indices:
+        return list_to_clean
+    for i in reversed(indices):
+        list_to_clean.pop(i)
+    return list_to_clean

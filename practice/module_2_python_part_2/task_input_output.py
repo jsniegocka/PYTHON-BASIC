@@ -16,8 +16,23 @@ Examples:
 
 """
 
+def get_user_input():
+    return input()
 
-def read_numbers(n: int) -> str:
-    ...
+
+def read_numbers(n: int = 10) -> str:
+    numbers = []
+    for _ in range(n):
+        try:
+            value = int(get_user_input())
+            numbers.append(value)
+        except ValueError:
+            continue
+
+    if not numbers:
+        return "No numbers entered"
+
+    return f"Avg: {sum(numbers) / len(numbers)}"
+
 
 

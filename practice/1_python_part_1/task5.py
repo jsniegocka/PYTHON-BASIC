@@ -13,4 +13,5 @@ Examples:
 
 
 def remove_duplicated_words(line: str) -> str:
-    ...
+    dict_words = dict([(x, 0) for x in line.split(" ")])
+    return " ".join(dict_words.keys())

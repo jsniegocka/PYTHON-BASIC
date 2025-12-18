@@ -29,15 +29,37 @@ import datetime
 
 
 class Teacher:
-    ...
+    def __init__(self, first_name, last_name):
+        self.first_name = first_name
+        self.last_name = last_name
+    @staticmethod
+    def create_homework(text, days):
+        print(f"Homework created. Info: {text}. {days} days")
+        return Homework(text, days)
+
 
 
 class Student:
-    ...
+    def __init__(self, first_name, last_name):
+        self.first_name = first_name
+        self.last_name = last_name
+    @staticmethod
+    def do_homework(homework):
+        if datetime.datetime.now() > homework.deadline:
+            print("You are late")
+            return None
+        else:
+            print(f"Doing homework: {homework.text}. Deadline: {homework.deadline.date()}")
+            return homework
 
 
 class Homework:
-    ...
+    def __init__(self, text, days):
+        self.text = text
+        self.deadline = datetime.datetime.now() + datetime.timedelta(days = days)
+        self.created = datetime.datetime.now()
+    def is_active(self):
+        return datetime.datetime.now() < self.deadline
 
 
 if __name__ == '__main__':
