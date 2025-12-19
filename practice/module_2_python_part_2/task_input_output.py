@@ -33,6 +33,3 @@ def read_numbers(n: int = 10) -> str:
         return "No numbers entered"
 
     return f"Avg: {sum(numbers) / len(numbers)}"
-
-
-

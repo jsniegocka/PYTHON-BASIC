@@ -21,3 +21,6 @@ def delete_from_list(list_to_clean: List, item_to_delete: Any) -> List:
     for i in reversed(indices):
         list_to_clean.pop(i)
     return list_to_clean
+
+if __name__ == '__main__':
+    print(delete_from_list([1, 2, 3, 4, 3], 3))

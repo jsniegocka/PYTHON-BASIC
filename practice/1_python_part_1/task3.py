@@ -24,3 +24,6 @@ def build_from_unique_words(*lines: Iterable[str], word_number: int) -> str:
         return_words.append(words[word_number])
     return_str = " ".join(return_words)
     return return_str
+
+if __name__ == '__main__':
+    print(build_from_unique_words('a b c', '1 1 1 2 3', 'cat dog milk', word_number=1))

@@ -15,3 +15,6 @@ def calculate_power_with_difference(ints: List[int]) -> List[int]:
         if i > 0:
             return_list.append(int ** 2 - (ints[i - 1] ** 2 - ints[i - 1]))
     return return_list
+
+if __name__ == '__main__':
+    print(calculate_power_with_difference([1, 2, 3]))

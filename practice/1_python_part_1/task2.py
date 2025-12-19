@@ -17,3 +17,6 @@ def set_to_dict(dict_to_update: Dict[str, int], **items_to_set) -> Dict:
         if i not in dict_to_update or items_to_set[i] > dict_to_update[i]:
             dict_to_update[i] = items_to_set[i]
     return dict_to_update
+
+if __name__ == '__main__':
+    print(set_to_dict({'a': 1, 'b': 2, 'c': 3}, a=0, b=4))

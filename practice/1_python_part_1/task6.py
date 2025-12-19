@@ -26,3 +26,5 @@ def get_min_max(filename: str) -> Tuple[int, int]:
             lines.append(int(line))
     return (min(lines), max(lines))
 
+if __name__ == '__main__':
+    print(get_min_max('task6.txt'))
