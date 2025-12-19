@@ -7,8 +7,8 @@ https://docs.pytest.org/en/6.2.x/tmpdir.html
 
 
 import pytest
-from module_2_python_part_2.task_read_write_2 import read_write_2
-import module_2_python_part_2.task_read_write_2 as mod
+from practice.module_2_python_part_2.task_read_write_2 import read_write_2
+import practice.module_2_python_part_2.task_read_write_2 as mod
 from unittest.mock import Mock
 
 

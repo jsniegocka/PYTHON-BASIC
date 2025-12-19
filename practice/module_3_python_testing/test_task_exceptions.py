@@ -9,7 +9,7 @@ https://stackoverflow.com/a/20507769
 """
 
 import pytest
-from module_2_python_part_2.task_exceptions import division, DivisionByOneException
+from practice.module_2_python_part_2.task_exceptions import division, DivisionByOneException
 
 
 @pytest.mark.parametrize("numbers, expected_output", [

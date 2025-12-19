@@ -6,7 +6,7 @@ https://docs.pytest.org/en/6.2.x/tmpdir.html
 """
 
 import pytest
-from module_2_python_part_2.task_read_write import read_write
+from practice.module_2_python_part_2.task_read_write import read_write
 
 @pytest.mark.parametrize("file_contents, expected_result", [
     (["23", "78", "3"], "23,78,3"),

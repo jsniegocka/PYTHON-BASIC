@@ -6,9 +6,9 @@ Also check corner-cases, for example if homework number of days is negative.
 
 import pytest
 import datetime
-from module_2_python_part_2.task_classes import Homework
-from module_2_python_part_2.task_classes import Teacher
-from module_2_python_part_2.task_classes import Student
+from practice.module_2_python_part_2.task_classes import Homework
+from practice.module_2_python_part_2.task_classes import Teacher
+from practice.module_2_python_part_2.task_classes import Student
 
 @pytest.mark.homework_creation
 def test_homework_creation():

@@ -17,11 +17,13 @@ with open(filename) as opened_file:
         ...
 """
 from typing import Tuple
+import os
 
 
 def get_min_max(filename: str) -> Tuple[int, int]:
+    file_path = os.path.join(os.path.dirname(__file__), filename)
     lines = []
-    with open(filename, "r") as opened_file:
+    with open(file_path, "r") as opened_file:
         for line in opened_file:
             lines.append(int(line))
     return (min(lines), max(lines))
