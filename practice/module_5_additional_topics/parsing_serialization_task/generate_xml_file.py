@@ -2,6 +2,7 @@ import os
 from lxml import etree
 import json
 from statistics import mean
+from practice.module_5_additional_topics.parsing_serialization_task.tests.validate_xml import check_result
 
 def generate_xml_file():
     # Get city names and the date
@@ -50,7 +51,7 @@ def generate_xml_file():
 
         # Calculate necessary statistics for summary
         mean_temp = round(mean(d["mean_temp"] for d in date_cities_data_dicts), 2)
-        mean_wind_speed = round(mean(d["meanA_wind_speed"] for d in date_cities_data_dicts), 2)
+        mean_wind_speed = round(mean(d["mean_wind_speed"] for d in date_cities_data_dicts), 2)
         coldest_place = min(date_cities_data_dicts, key = lambda x: x["mean_temp"])["city"]
         warmest_place = max(date_cities_data_dicts, key = lambda x: x["mean_temp"])["city"]
         windiest_place = max(date_cities_data_dicts, key = lambda x: x["mean_wind_speed"])["city"]
@@ -62,8 +63,10 @@ def generate_xml_file():
 
         # Create .xml file
         tree = etree.ElementTree(root)
-        tree.write(".example_result.xml", pretty_print=True)
+        file = os.path.join(os.path.dirname(__file__), "example_result.xml")
+        tree.write(file, pretty_print=True)
 
 
 if __name__ == "__main__":
     generate_xml_file()
+    check_result(os.path.join(os.path.dirname(__file__), "example_result.xml"))
