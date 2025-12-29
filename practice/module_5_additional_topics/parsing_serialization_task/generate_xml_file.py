@@ -63,10 +63,9 @@ def generate_xml_file():
 
         # Create .xml file
         tree = etree.ElementTree(root)
-        file = os.path.join(os.path.dirname(__file__), "example_result.xml")
+        file = os.path.join(os.path.dirname(__file__), "tests/example_result.xml")
         tree.write(file, pretty_print=True)
 
 
 if __name__ == "__main__":
     generate_xml_file()
-    check_result(os.path.join(os.path.dirname(__file__), "example_result.xml"))
