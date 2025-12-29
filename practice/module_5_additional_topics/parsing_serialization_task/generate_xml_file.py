@@ -2,7 +2,6 @@ import os
 from lxml import etree
 import json
 from statistics import mean
-from practice.module_5_additional_topics.parsing_serialization_task.tests.validate_xml import check_result
 
 def generate_xml_file():
     # Get city names and the date
