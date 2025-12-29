@@ -5,8 +5,8 @@ from statistics import mean
 
 def generate_xml_file():
     # Get city names and the date
-    cities = os.listdir(os.path.join(".", "source_data"))
-    dates = set([os.listdir(os.path.join(".", "source_data", c))[0].split(".")[0] for c in cities])
+    cities = os.listdir(os.path.join(os.path.dirname(__file__), "source_data"))
+    dates = set([os.listdir(os.path.join(os.path.dirname(__file__), "source_data", c))[0].split(".")[0] for c in cities])
 
     for date in dates:
         # Create xml root and other elements
@@ -19,7 +19,7 @@ def generate_xml_file():
 
         for i, c in enumerate(cities):
             date_city_data_dict = {"city": c, "city_temps": [], "city_wind_speeds": []}
-            date_city_file = os.path.join(".", "source_data", c, f"{date}.json")
+            date_city_file = os.path.join(os.path.dirname(__file__), "source_data", c, f"{date}.json")
             date_city_data_dict["date_city_file"] = date_city_file
 
             # Get information from a singular .json file
