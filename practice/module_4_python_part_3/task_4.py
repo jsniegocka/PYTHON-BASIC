@@ -48,7 +48,7 @@ Example:
 
 from unittest.mock import Mock, patch
 
-@patch("task_4.Faker")
+@patch("practice.module_4_python_part_3.task_4.Faker")
 def test_print_name_address_mocked_faker(MockFaker):
     fake_instance = MockFaker.return_value
     fake_instance.name.side_effect = ["Alice Smith", "Bob Johnson"]

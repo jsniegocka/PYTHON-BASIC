@@ -37,7 +37,7 @@ from unittest.mock import MagicMock, patch
 
 class TestMakeRequest(unittest.TestCase):
 
-    @patch('task_5.urlopen')
+    @patch('practice.module_4_python_part_3.task_5.urlopen')
     def test_make_request_success(self, mock_urlopen):
 
         mock_response = MagicMock()
