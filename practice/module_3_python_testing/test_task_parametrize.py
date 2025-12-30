@@ -9,7 +9,7 @@ Task:
  1. Write a test with @pytest.mark.parametrize decorator.
  2. Find the buggy function and fix it.
 """
-
+import pytest
 
 def fibonacci_1(n):
     a, b = 0, 1
@@ -20,6 +20,25 @@ def fibonacci_1(n):
 
 def fibonacci_2(n):
     fibo = [0, 1]
-    for i in range(1, n+1):
+    for i in range(2, n+1):
         fibo.append(fibo[i-1] + fibo[i-2])
     return fibo[n]
+
+fib_values = [
+    (1, 1),
+    (2, 1),
+    (3, 2),
+    (4, 3),
+    (5, 5),
+    (6, 8),
+    (7, 13)
+]
+
+@pytest.mark.parametrize("n, expected", fib_values)
+def test_fibonacci_1(n, expected):
+    assert fibonacci_1(n) == expected
+
+
+@pytest.mark.parametrize("n, expected", fib_values)
+def test_fibonacci_2(n, expected):
+    assert fibonacci_2(n) == expected
