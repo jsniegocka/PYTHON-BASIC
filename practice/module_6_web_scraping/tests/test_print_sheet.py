@@ -12,12 +12,12 @@ def test_print_sheet_output(capfd):
             "CEO Year Born": "1962",
         },
         {
-            "Name": "Moderna Inc.",
-            "Code": "MRNA",
+            "Name": "Pfizer Inc.",
+            "Code": "PFE",
             "Country": "United States",
-            "Employees": "18000",
-            "CEO Name": "Stéphane Bancel",
-            "CEO Year Born": "1972",
+            "Employees": "78500",
+            "CEO Name": "Dr. Albert Bourla D.V.M., DVM, Ph.D.",
+            "CEO Year Born": "1962",
         },
     ]
 
@@ -26,11 +26,10 @@ def test_print_sheet_output(capfd):
     captured = capfd.readouterr()
 
     expected = (
-        "==================================================Sheet===================================================\n"
-        "| Name         | Code | Country       | Employees | CEO Name                             | CEO Year Born |\n"
-        "----------------------------------------------------------------------------------------------------------\n"
-        "| Pfizer Inc.  | PFE  | United States | 78500     | Dr. Albert Bourla D.V.M., DVM, Ph.D. | 1962          |\n"
-        "| Moderna Inc. | MRNA | United States | 18000     | Stéphane Bancel                      | 1972          |\n\n"
+        "==================================================Sheet==================================================\n"
+        "| Name        | Code | Country       | Employees | CEO Name                             | CEO Year Born |\n"
+        "---------------------------------------------------------------------------------------------------------\n"
+        "| Pfizer Inc. | PFE  | United States | 78500     | Dr. Albert Bourla D.V.M., DVM, Ph.D. | 1962          |\n\n"
     )
 
     assert captured.out == expected

@@ -188,8 +188,22 @@ def sort_sheet_dict_list(sheet_dict_list, key, reverse=False):
     )
     return sheet_dict_list_sorted
 
+def remove_duplicates(rows, columns):
+    """Remove duplicate rows based on specified columns"""
+    seen = set()
+    unique_rows = []
+    for row in rows:
+        row_tuple = tuple(row.get(col, "") for col in columns)
+        if row_tuple not in seen:
+            seen.add(row_tuple)
+            unique_rows.append(row)
+    return unique_rows
+
 def print_sheet(title, columns, rows):
     """Print sheet information"""
+    # Remove duplicates
+    rows = remove_duplicates(rows, columns)
+
     # Setting columns widths: max(title, data)
     col_widths = {}
     for col in columns:
