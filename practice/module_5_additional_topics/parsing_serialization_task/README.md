@@ -63,7 +63,7 @@ All decimal values must be rounded to 2 decimal places.
 
 ### Output XML example
 
-[example](./tests/example_result.xml)
+[example](tests/example_result.xml)
 
 ### Validation
 You could use [check_result function](./tests/validate_xml.py) to validate your output XML. 
