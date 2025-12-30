@@ -29,8 +29,7 @@ def download_apod_images(metadata: list):
     with ThreadPoolExecutor() as executor:
         executor.map(scrape, [(m["date"], m["url"]) for m in metadata])
 
-
-def main():
+if __name__ == '__main__':
     metadata = get_apod_metadata(
         start_date='2021-08-01',
         end_date='2021-09-30',
@@ -38,6 +37,3 @@ def main():
     )
     download_apod_images(metadata=metadata)
 
-
-if __name__ == '__main__':
-    main()

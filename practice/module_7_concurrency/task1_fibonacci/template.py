@@ -61,8 +61,7 @@ def func2_slow(result_file: str, output_dir):
                 line = f2.read()
                 f1.write(f"{file.split(".")[0]},{line}\n")
 
-
-def main():
+if __name__ == '__main__':
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
@@ -94,6 +93,3 @@ def main():
     func2_slow(result_file=RESULT_FILE, output_dir=OUTPUT_DIR)
     print(f"Second function without multithreading execution time: {time.time() - time_start}")
 
-
-if __name__ == '__main__':
-    main()
