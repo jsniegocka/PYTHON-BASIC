@@ -2,7 +2,7 @@ import requests
 import os
 from concurrent.futures import ThreadPoolExecutor
 
-API_KEY = "YOUR_KEY"
+API_KEY = os.getenv("NASA_API_KEY")
 APOD_ENDPOINT = 'https://api.nasa.gov/planetary/apod'
 OUTPUT_IMAGES = os.path.join(os.path.dirname(os.path.abspath(__file__)), './output')
 
