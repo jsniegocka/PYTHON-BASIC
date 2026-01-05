@@ -211,6 +211,24 @@ def save_console_utility_parameters(parser:argparse.ArgumentParser) -> dict:
     log.info("Console utility parameters have been saved")
     return args_dict
 
+def set_path_to_save_files(path_to_save_files:str) -> str:
+    """Setting path to save output files"""
+    log.info("Setting path for saving output files...")
+    if path_to_save_files == ".":
+        log.info(f"Path to save files set in current directory: {path_to_save_files}")
+        return os.getcwd()
+    elif os.path.exists(path_to_save_files):
+        log.info(f"Path to save files set in custom directory: {path_to_save_files}")
+        return path_to_save_files
+    else:
+        try:
+            os.makedirs(path_to_save_files)
+            log.info(f"Path to save files does not exist. Created new directory: {path_to_save_files}")
+            return path_to_save_files
+        except Exception as e:
+            log.error(f"Path to save files does not exist. Failed to create directory '{path_to_save_files}': {e}")
+            sys.exit(1)
+
 def read_data_schema(data_schema:str) -> dict:
     """Reading data schema from json file or input"""
     log.info("Reading data schema...")
@@ -221,6 +239,81 @@ def read_data_schema(data_schema:str) -> dict:
             return json.load(f)
     else:
         return json.loads(data_schema)
+
+def validate_value_timestamp(ds_value:str) -> None:
+    """Validating timestamp in data schema"""
+    if ds_value != "":
+        log.warning("Timestamp does not support any values")
+
+def validate_value_str(ds_value:str) -> None:
+    """Validating string in data schema"""
+    if ds_value == "": pass
+    elif ds_value == "rand": pass
+    elif ds_value == "[]":
+        log.error(f"Incorrect string list format: {ds_value}. Empty list is not allowed")
+        sys.exit(1)
+    elif ds_value[0] == "[" and ds_value[-1] == "]": pass
+    elif isinstance(ds_value, str):
+        try:
+            int(ds_value)
+            log.error(f"Incorrect string format: {ds_value}. Integer instead of string")
+            sys.exit(1)
+        except ValueError:
+            pass
+    elif not isinstance(ds_value, str):
+        log.error(f"Incorrect string format: {ds_value}")
+        sys.exit(1)
+
+def validate_value_int(ds_value:str) -> None:
+    """Validating integer in data schema"""
+    if ds_value == "":
+        pass
+    elif ds_value == "[]":
+        log.error(f"Incorrect integer list format: {ds_value}. Empty list is not allowed")
+        sys.exit(1)
+    elif "rand" in ds_value:
+        try:
+            start, end = map(int, ds_value.removeprefix("rand(").removesuffix(")").split(","))
+            if start > end:
+                log.error(
+                    f"Incorrect range format for rand: {ds_value}. First number can't be greater than the second number")
+                sys.exit(1)
+            random.randint(start, end)
+        except ValueError:
+            log.error(f"Incorrect range format for rand: {ds_value}")
+            sys.exit(1)
+    elif ds_value[0] == "[" and ds_value[-1] == "]":
+        rand = [x.strip() for x in ds_value[1:-1].split(",")]
+        if not all(x.isdigit() for x in rand):
+            log.error(f"Incorrect integer list format: {ds_value}")
+            sys.exit(1)
+    else:
+        try:
+            int(ds_value)
+        except ValueError:
+            log.error(f"Incorrect integer format: {ds_value}")
+            sys.exit(1)
+
+def validate_schema_data_types_and_values(ds_type:str, ds_value:str) -> None:
+    """Coordinate validating data schema data types and data values"""
+    match ds_type:
+        case "timestamp":
+            validate_value_timestamp(ds_value)
+        case "str":
+            validate_value_str(ds_value)
+        case "int":
+            validate_value_int(ds_value)
+        case _:
+            log.error(f"Incorrect data type in data schema - value: {ds_type}, data type: {type(ds_type)}")
+            sys.exit(1)
+
+def validate_schema(data_schema:dict) -> None:
+    """Validating data schema"""
+    log.info("Validating data schema...")
+    for i, ds in enumerate(data_schema.keys()):
+        ds_type, ds_value = data_schema[ds].split(":")
+        validate_schema_data_types_and_values(ds_type, ds_value)
+    log.info("Data schema validated")
 
 def gen_file_names(files_count:int, file_name:str, file_prefix:str) -> list:
     """Generating file names"""
@@ -313,7 +406,7 @@ def write_single_json_file(lines:list, filename:str, path_to_save_files:str) -> 
     """Writing single json file"""
     log.info(f"Writing json file: {filename} ...")
     with open(os.path.join(path_to_save_files, filename), "w") as f:
-        json.dump(lines, f, indent=4)
+        f.write("\n".join(json.dumps(line) for line in lines))
     log.info(f"File {filename} has been written")
 
 def gen_output_for_console(data_schema:dict, data_lines:int) -> list:
@@ -412,11 +505,17 @@ def data_generator():
     # Checking if console utility arguments are valid
     check_args_dict(args_dict)
 
+    # Setting path to save output files
+    path_to_save_files = set_path_to_save_files(args_dict["path_to_save_files"])
+
     # Reading data schema
     data_schema = read_data_schema(args_dict["data_schema"])
 
     # Generating file names
     file_names = gen_file_names(args_dict["files_count"], args_dict["file_name"], args_dict["file_prefix"])
+
+    # Validating data schema
+    validate_schema(data_schema)
 
     # Generate files
     generate_json_files_all(file_names,
@@ -424,7 +523,7 @@ def data_generator():
                             args_dict["multiprocessing"],
                             args_dict["data_lines"],
                             args_dict["files_count"],
-                            args_dict["path_to_save_files"])
+                            path_to_save_files)
 
 
 if __name__ == '__main__':
