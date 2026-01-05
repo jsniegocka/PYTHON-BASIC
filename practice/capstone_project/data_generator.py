@@ -59,8 +59,11 @@ Parameters:
 import argparse
 import configparser
 import os
+import sys
 import logging
 import json
+import uuid
+import random
 import time
 from concurrent.futures import ProcessPoolExecutor
 
@@ -172,6 +175,7 @@ def add_parser_arguments(parser: argparse.ArgumentParser, config) -> None:
 
 def setup_parser() -> argparse.ArgumentParser:
     """Setting up console utility"""
+
     log.info("Setting up console utility...")
 
     # Reading configuration file
@@ -185,6 +189,19 @@ def setup_parser() -> argparse.ArgumentParser:
 
     log.info("Console utility has been set up")
     return parser
+
+def check_args_dict(args_dict:dict) -> None:
+    log.info("Checking if console utility arguments are valid...")
+    if args_dict["files_count"] < 0:
+        log.error(f"Number of files can't be negative: {args_dict["files_count"]}")
+        sys.exit(1)
+    if args_dict["data_lines"] < 0:
+        log.error(f"Number of lines in file can't be negative: {args_dict["data_lines"]}")
+        sys.exit(1)
+    if args_dict["multiprocessing"] < 0:
+        log.error(f"Number of processes can't be negative: {args_dict["multiprocessing"]}")
+        sys.exit(1)
+    log.info("Console utility arguments are valid")
 
 def save_console_utility_parameters(parser:argparse.ArgumentParser) -> dict:
     """Saving console utility arguments"""
@@ -219,37 +236,148 @@ def gen_file_names(files_count:int, file_name:str, file_prefix:str) -> list:
     # If there are multiple files, return names with prefix
     log.info(f"Generating file names using prefix: {file_prefix} ...")
     for c in range(files_count):
-        file_names.append(f"{file_name}_{c+1}.json")
+        match file_prefix:
+            case "count":
+                file_names.append(f"{file_name}_{c+1}.json")
+            case "random":
+                file_names.append(f"{file_name}_{random.randint(0, max(10000, files_count))}.json")
+            case "uuid":
+                file_names.append(f"{file_name}_{uuid.uuid4()}.json")
     log.info("File names generated")
     return file_names
 
-def write_single_json_file(data_schema:dict, filename:str, path_to_save_files:str) -> None:
+def split_list_evenly(lst:list, n:int) -> list:
+    """Splitting list evenly"""
+    return [lst[i::n] for i in range(n)]
+
+def gen_value_str(ds_value:str) -> str:
+    """Generating a string value from schema"""
+    if ds_value == "":
+        return ""
+    elif ds_value == "rand":
+        return str(uuid.uuid4())
+    elif ds_value[0] == "[" and ds_value[-1] == "]":
+        return random.choice([x.strip().strip("'") for x in ds_value[1:-1].split(",")])
+    else:
+        return ds_value
+
+def gen_value_int(ds_value:str) -> int|None:
+    """Generating a integer value from schema"""
+    if ds_value == "":
+        return None
+    elif ds_value == "rand":
+        return random.randint(0, 10000)
+    elif "rand" in ds_value:
+        start, end = map(int, ds_value.removeprefix("rand(").removesuffix(")").split(","))
+        rand_num = random.randint(start, end)
+        return rand_num
+    elif ds_value[0] == "[" and ds_value[-1] == "]":
+        rand = [x.strip() for x in ds_value[1:-1].split(",")]
+        rand_int = int(random.choice(rand))
+        return rand_int
+    else:
+        ds_int = int(ds_value)
+        return ds_int
+
+def gen_value_from_schema(ds_type:str, ds_value:str) -> str|int|float|None:
+    """Generating a singular value from schema, based on parameters from special notation"""
+    match ds_type:
+        case "timestamp":
+            return time.time()
+        case "str":
+            return gen_value_str(ds_value)
+        case "int":
+            return gen_value_int(ds_value)
+        case _:
+            return None
+
+def gen_line_from_schema(data_schema:dict) -> dict:
+    """Set up generating a singular line from shema"""
+    gen_line_dict = {}
+    for i, ds in enumerate(data_schema.keys()):
+        ds_type, ds_value = data_schema[ds].split(":")
+        gen_value = gen_value_from_schema(ds_type, ds_value)
+        gen_line_dict[ds] = gen_value
+    return gen_line_dict
+
+def join_gen_lines(data_schema:dict, data_lines:int) -> list:
+    """Joining generated lines into a singular .json file"""
+    lines = []
+    for l in range(data_lines):
+        # Generating a singular line from shema
+        gen_line = gen_line_from_schema(data_schema)
+        lines.append(gen_line)
+    return lines
+
+def write_single_json_file(lines:list, filename:str, path_to_save_files:str) -> None:
     """Writing single json file"""
     log.info(f"Writing json file: {filename} ...")
     with open(os.path.join(path_to_save_files, filename), "w") as f:
-        json.dump(data_schema, f, indent=4)
+        json.dump(lines, f, indent=4)
     log.info(f"File {filename} has been written")
 
-def setup_output_for_directory(fnl:list, data_schema:dict, path_to_save_files:str) -> None:
+def gen_output_for_console(data_schema:dict, data_lines:int) -> list:
+    """Generating lines for console output"""
+    log.info(f"Generating lines for the console...")
+    lines = join_gen_lines(data_schema, data_lines)
+    log.info(f"Lines for console have been generated")
+    return lines
+
+def print_output_to_console(lines:list) -> None:
+    """Printing output to console"""
+    for line in lines:
+        print(line, "\n")
+
+def setup_output_for_console(data_schema:dict, data_lines:int) -> None:
+    """Setting up output for console"""
+
+    # Generate lines for the console
+    lines = gen_output_for_console(data_schema, data_lines)
+
+    # Print lines to console
+    print_output_to_console(lines)
+
+def gen_output_for_directory(filename:str, data_schema:dict, data_lines:int) -> list:
+    """Generating lines for json file"""
+    log.info(f"Generating lines for json file: {filename} ...")
+    lines = join_gen_lines(data_schema, data_lines)
+    log.info(f"Lines for json file {filename} have been generated")
+    return lines
+
+def setup_output_for_directory(fnl:list, data_schema:dict, data_lines:int, path_to_save_files:str) -> None:
     """Setting up output for directory"""
     # Generating multiple files
     for filename in fnl:
         # Generating singular file
         log.info(f"Generating json file: {filename} ...")
 
+        # Generating output for directory
+        lines = gen_output_for_directory(filename, data_schema, data_lines)
+
         # Writing singular file
-        write_single_json_file(data_schema, filename, path_to_save_files)
+        write_single_json_file(lines, filename, path_to_save_files)
 
         log.info(f"File {filename} has been generated")
 
-def generate_json_files_multiple_processes(split_file_names_list:list, data_schema:dict, path_to_save_files:str) -> None:
+def generate_json_files_single_process(fnl:list, data_schema:dict, data_lines:int, files_count:int, path_to_save_files:str) -> None:
+    """Coordinate generating multiple .json files in a singular process (deciding type of output)"""
+
+    # Deciding type of output
+    if files_count == 0:  # checking if number of files is 0
+        setup_output_for_console(data_schema, data_lines)
+    else:
+        setup_output_for_directory(fnl, data_schema, data_lines, path_to_save_files)
+
+def generate_json_files_multiple_processes(split_file_names_list:list, data_schema:dict, data_lines:int, files_count:int, path_to_save_files:str) -> None:
     """Coordinate generating multiple .json files in multiple processes (using multiprocessing)"""
     with ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(
-                setup_output_for_directory,
+                generate_json_files_single_process,
                 fnl,
                 data_schema,
+                data_lines,
+                files_count,
                 path_to_save_files
             )
             for fnl in split_file_names_list
@@ -258,11 +386,7 @@ def generate_json_files_multiple_processes(split_file_names_list:list, data_sche
         for future in futures:
             future.result()
 
-def split_list_evenly(lst:list, n:int) -> list:
-    """Splitting list evenly"""
-    return [lst[i::n] for i in range(n)]
-
-def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:int,  path_to_save_files:str) -> None:
+def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:int, data_lines:int, files_count:int,  path_to_save_files:str) -> None:
     """Coordinate generating all json files"""
     log.info("Starting multiprocessing...")
 
@@ -273,17 +397,20 @@ def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:i
 
     # Generating multiple .json files in multiple processes
     time_start = time.time() # saving start time to measure execution time
-    log.info(f"Starting generation of json files with multiprocessing. Start time: {time.strftime("%H:%M:%S", time.localtime(time_start))}")
-    generate_json_files_multiple_processes(split_file_names_list, data_schema, path_to_save_files)
+    log.info(f"Starting generation of json files with multiprocessing. Start time: {time_start}")
+    generate_json_files_multiple_processes(split_file_names_list, data_schema, data_lines, files_count,
+                                           path_to_save_files)
     log.info(
-        f"Generation of json files has ended. End time: {time.strftime("%H:%M:%S", time.localtime(time.time()))}. Multiprocessing execution time: {round(time.time() - time_start, 4)} seconds")
-
+        f"Generation of json files has ended. End time: {time.time()}. Multiprocessing execution time: {round(time.time() - time_start, 4)} seconds")
 
 def data_generator():
     """Coordinate data generation"""
     # Setting up parser and saving console utility parameters
     parser = setup_parser()
     args_dict = save_console_utility_parameters(parser)
+
+    # Checking if console utility arguments are valid
+    check_args_dict(args_dict)
 
     # Reading data schema
     data_schema = read_data_schema(args_dict["data_schema"])
@@ -295,7 +422,10 @@ def data_generator():
     generate_json_files_all(file_names,
                             data_schema,
                             args_dict["multiprocessing"],
+                            args_dict["data_lines"],
+                            args_dict["files_count"],
                             args_dict["path_to_save_files"])
+
 
 if __name__ == '__main__':
     data_generator()
