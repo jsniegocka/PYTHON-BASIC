@@ -64,6 +64,7 @@ import logging
 import json
 import uuid
 import random
+from datetime import datetime
 import time
 from concurrent.futures import ProcessPoolExecutor
 
@@ -201,6 +202,15 @@ def check_args_dict(args_dict:dict) -> None:
     if args_dict["multiprocessing"] < 0:
         log.error(f"Number of processes can't be negative: {args_dict["multiprocessing"]}")
         sys.exit(1)
+    if args_dict["file_name"].count(".") > 1:
+        log.error(f"File name contains more than one '.': {args_dict["file_name"]}")
+        sys.exit(1)
+    if "." in args_dict["file_name"] and args_dict["file_name"].count(".") == 1:
+        if args_dict["file_name"].split(".")[1] != "json":
+            log.error(f"Incorrect file extension: {args_dict["file_name"]}")
+            sys.exit(1)
+        else:
+            args_dict["file_name"] = args_dict["file_name"].split(".")[0]
     log.info("Console utility arguments are valid")
 
 def save_console_utility_parameters(parser:argparse.ArgumentParser) -> dict:
@@ -214,20 +224,28 @@ def save_console_utility_parameters(parser:argparse.ArgumentParser) -> dict:
 def set_path_to_save_files(path_to_save_files:str) -> str:
     """Setting path to save output files"""
     log.info("Setting path for saving output files...")
-    if path_to_save_files == ".":
-        log.info(f"Path to save files set in current directory: {path_to_save_files}")
-        return os.getcwd()
-    elif os.path.exists(path_to_save_files):
-        log.info(f"Path to save files set in custom directory: {path_to_save_files}")
-        return path_to_save_files
-    else:
-        try:
-            os.makedirs(path_to_save_files)
-            log.info(f"Path to save files does not exist. Created new directory: {path_to_save_files}")
-            return path_to_save_files
-        except Exception as e:
-            log.error(f"Path to save files does not exist. Failed to create directory '{path_to_save_files}': {e}")
+
+    try:
+        if path_to_save_files == ".":
+            path_to_save_files = os.getcwd()
+            timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+            path_to_save_files = os.path.join(path_to_save_files, "generated_files", timestamp)
+            log.info("Path to save files set in current directory")
+        else:
+            path_to_save_files = os.path.abspath(path_to_save_files)
+            log.info("Path to save files set in custom directory")
+
+        if os.path.exists(path_to_save_files) and not os.path.isdir(path_to_save_files):
+            log.error(f"Provided path exists but is not a directory: {path_to_save_files}")
             sys.exit(1)
+
+        log.info(f"Path to save files set in: {path_to_save_files}")
+        os.makedirs(path_to_save_files, exist_ok=True)
+        return path_to_save_files
+
+    except Exception as e:
+        log.error(f"Failed to create directory '{path_to_save_files}': {e}")
+        sys.exit(1)
 
 def read_data_schema(data_schema:str) -> dict:
     """Reading data schema from json file or input"""
@@ -315,27 +333,47 @@ def validate_schema(data_schema:dict) -> None:
         validate_schema_data_types_and_values(ds_type, ds_value)
     log.info("Data schema validated")
 
-def gen_file_names(files_count:int, file_name:str, file_prefix:str) -> list:
+def get_unique_filename(base_name: str, path_to_save_files: str) -> str:
+    """Return unique file name"""
+    filename = f"{base_name}.json"
+    if not os.path.exists(os.path.join(path_to_save_files, filename)):
+        return filename
+
+    counter = 1
+    while os.path.exists(os.path.join(path_to_save_files, filename)):
+        filename = f"{base_name}_{counter}.json"
+        counter += 1
+
+    return filename
+
+def gen_file_names(files_count:int, file_name:str, file_prefix:str, path_to_save_files:str) -> list:
     """Generating file names"""
     log.info("Generating file names...")
 
     # If there is only one file, return name without prefix
     file_names = []
     if files_count == 1:
-        file_names = [file_name]
+        file_names = [f"{file_name}.json"]
         log.info("File names generated")
         return file_names
 
     # If there are multiple files, return names with prefix
     log.info(f"Generating file names using prefix: {file_prefix} ...")
-    for c in range(files_count):
-        match file_prefix:
-            case "count":
-                file_names.append(f"{file_name}_{c+1}.json")
-            case "random":
-                file_names.append(f"{file_name}_{random.randint(0, max(10000, files_count))}.json")
-            case "uuid":
-                file_names.append(f"{file_name}_{uuid.uuid4()}.json")
+    match file_prefix:
+        case "count":
+            for c in range(files_count):
+                name = get_unique_filename(f"{file_name}_{c + 1}", path_to_save_files)
+                file_names.append(name)
+        case "random":
+            for c in range(files_count):
+                name = get_unique_filename(f"{file_name}_{random.randint(0, max(10000, files_count))}",
+                                         path_to_save_files)
+                file_names.append(name)
+        case "uuid":
+            for c in range(files_count):
+                name = get_unique_filename(f"{file_name}_{uuid.uuid4()}", path_to_save_files)
+                file_names.append(name)
+            file_names.append(f"{file_name}_{uuid.uuid4()}.json")
     log.info("File names generated")
     return file_names
 
@@ -512,7 +550,7 @@ def data_generator():
     data_schema = read_data_schema(args_dict["data_schema"])
 
     # Generating file names
-    file_names = gen_file_names(args_dict["files_count"], args_dict["file_name"], args_dict["file_prefix"])
+    file_names = gen_file_names(args_dict["files_count"], args_dict["file_name"], args_dict["file_prefix"], path_to_save_files)
 
     # Validating data schema
     validate_schema(data_schema)
