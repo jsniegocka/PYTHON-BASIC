@@ -258,6 +258,18 @@ def read_data_schema(data_schema:str) -> dict:
     else:
         return json.loads(data_schema)
 
+def validate_schema_structure(data_schema: dict, ds:str) -> None:
+    """Validating structure of data schema"""
+    if ":" not in data_schema[ds] and "timestamp" not in data_schema[ds]:
+        log.error(f"Incorrect data schema - there is no ':', only data type or value type provided: {ds}:{data_schema[ds]}")
+        sys.exit(1)
+    if data_schema[ds].count(":") != 1 and "timestamp" not in data_schema[ds]:
+        log.error(f"Incorrect data schema - too many ':' : {ds}:{data_schema[ds]}")
+        sys.exit(1)
+    if data_schema[ds].count(":")  > 1:
+        log.error(f"Incorrect data schema - too many ':' : {ds}:{data_schema[ds]}")
+        sys.exit(1)
+
 def validate_value_timestamp(ds_value:str) -> None:
     """Validating timestamp in data schema"""
     if ds_value != "":
@@ -329,7 +341,15 @@ def validate_schema(data_schema:dict) -> None:
     """Validating data schema"""
     log.info("Validating data schema...")
     for i, ds in enumerate(data_schema.keys()):
-        ds_type, ds_value = data_schema[ds].split(":")
+        validate_schema_structure(data_schema, ds)
+        ds_type, ds_value = "", ""
+        if ":" in data_schema[ds]:
+            ds_type, ds_value = data_schema[ds].split(":")
+        elif "timestamp" in data_schema[ds]:
+            ds_type = data_schema[ds]
+        validate_schema_data_types_and_values(ds_type, ds_value)
+        log.info("Data schema validated")
+
         validate_schema_data_types_and_values(ds_type, ds_value)
     log.info("Data schema validated")
 
@@ -361,9 +381,15 @@ def gen_file_names(files_count:int, file_name:str, file_prefix:str, path_to_save
     log.info(f"Generating file names using prefix: {file_prefix} ...")
     match file_prefix:
         case "count":
-            for c in range(files_count):
-                name = get_unique_filename(f"{file_name}_{c + 1}", path_to_save_files)
-                file_names.append(name)
+            existing = [
+                int(f.split("_")[-1].split(".")[0])
+                for f in os.listdir(path_to_save_files)
+                if f.startswith(file_name + "_") and f.endswith(".json")
+            ]
+            start_num = max(existing, default=0) + 1
+
+            for c in range(start_num, start_num + files_count):
+                file_names.append(f"{file_name}_{c}.json")
         case "random":
             for c in range(files_count):
                 name = get_unique_filename(f"{file_name}_{random.randint(0, max(10000, files_count))}",
@@ -426,7 +452,11 @@ def gen_line_from_schema(data_schema:dict) -> dict:
     """Set up generating a singular line from shema"""
     gen_line_dict = {}
     for i, ds in enumerate(data_schema.keys()):
-        ds_type, ds_value = data_schema[ds].split(":")
+        if ":" in data_schema[ds]:
+            ds_type, ds_value = data_schema[ds].split(":")
+        else:
+            ds_type = data_schema[ds]
+            ds_value = ""
         gen_value = gen_value_from_schema(ds_type, ds_value)
         gen_line_dict[ds] = gen_value
     return gen_line_dict
