@@ -93,7 +93,8 @@ def create_parser() -> argparse.ArgumentParser:
     log.info("Creating parser...")
     parser = argparse.ArgumentParser(
         prog="data_generator",
-        description="Universal Console Utility (CU) for generating test data based on the provided data schema.")
+        description="Universal Console Utility (CU) for generating test data based on the provided data schema.",
+        formatter_class=argparse.RawTextHelpFormatter)
     log.info("Parser has been created")
     return parser
 
@@ -116,8 +117,8 @@ def add_parser_arguments(parser: argparse.ArgumentParser, config) -> None:
                         nargs="?",
                         default=config["DEFAULT"]["file_name"],
                         type=str,
-                        help="Base json file_name. If there is no prefix, the final file name will be file_name.json. \
-                                With prefix full file name will be file_name_file_prefix.json.")
+                        help="Base json file_name. If there is no prefix, the final file name will be file_name.json. \n"
+                             "With prefix full file name will be file_name_file_prefix.json.")
 
     parser.add_argument("--file_prefix",
                         nargs="?",
@@ -142,10 +143,10 @@ def add_parser_arguments(parser: argparse.ArgumentParser, config) -> None:
                         "    - 'rand' (random generation):\n"
                         "        - If on the left, there is 'str' type, uuid4 is used for generation.\n"
                         "        - If on the left, there is 'int' type, random.randint(0, 10000) is used for generation.\n"
-                        "    - List with values '[]', for example, 'str:[\'client\', \'partner\', \'government\']' or "
+                        "    - List with values '[]', for example, 'str:[\'client\', \'partner\', \'government\']' or \n"
                         "'int:[0, 9, 10, 4]' — takes a random value from the list.\n"
                         "    - 'rand(from, to)' — random generation for int values in the prescribed range. Possible only with 'int' type.\n"
-                        "    - Stand-alone value: If in the schema, after ':', a value is written which has a type corresponding "
+                        "    - Stand-alone value: If in the schema, after ':', a value is written which has a type corresponding \n"
                         "to the left part. For example, for 'name': 'str:cat', the script generates 'name':'cat' for each line.\n"
                         "    - Empty value: For any type, the following applies:\n"
                         "        - For 'int', uses None.\n"
@@ -161,16 +162,16 @@ def add_parser_arguments(parser: argparse.ArgumentParser, config) -> None:
     parser.add_argument("--clear_path",
                         action="store_true",
                         default=config["DEFAULT"]["clear_path"],
-                        help="Flag indicating if all files in path_to_save_files that match file_name will be deleted \
-                                before the script starts creating new data files.")
+                        help="Flag indicating if all files in path_to_save_files that match file_name will be deleted \n"
+                             "before the script starts creating new data files.")
 
     parser.add_argument("--multiprocessing",
                         nargs="?",
                         default=config["DEFAULT"]["multiprocessing"],
                         type=int,
-                        help="The number of processes used to create files. Divides the “files_count” value equally \
-                                and starts N processes to create an equal number of files in parallel (optional argument, \
-                                default value: 1.")
+                        help="The number of processes used to create files. Divides the “files_count” value equally \n"
+                             "and starts N processes to create an equal number of files in parallel (optional argument, \n"
+                             "default value: 1.")
 
     log.info("Parser arguments have been added")
 
@@ -246,6 +247,16 @@ def set_path_to_save_files(path_to_save_files:str) -> str:
     except Exception as e:
         log.error(f"Failed to create directory '{path_to_save_files}': {e}")
         sys.exit(1)
+
+def delete_files_in_save_path(path_to_save_files:str, file_name:str, clear_path:bool) -> None:
+    """Deleting all files in save path that match file_name"""
+    if clear_path:
+        log.info("Deleting all files in path_to_save_files that match file_name...")
+        for filename in os.listdir(path_to_save_files):
+            file_path = os.path.join(path_to_save_files, filename)
+            if os.path.isfile(file_path) and filename.endswith(".json") and filename.startswith(file_name.split('.')[0]):
+                os.remove(file_path)
+        log.info("All files in path_to_save_files that match file_name have been deleted")
 
 def read_data_schema(data_schema:str) -> dict:
     """Reading data schema from json file or input"""
@@ -399,7 +410,6 @@ def gen_file_names(files_count:int, file_name:str, file_prefix:str, path_to_save
             for c in range(files_count):
                 name = get_unique_filename(f"{file_name}_{uuid.uuid4()}", path_to_save_files)
                 file_names.append(name)
-            file_names.append(f"{file_name}_{uuid.uuid4()}.json")
     log.info("File names generated")
     return file_names
 
@@ -547,6 +557,22 @@ def generate_json_files_multiple_processes(split_file_names_list:list, data_sche
         for future in futures:
             future.result()
 
+def check_number_of_processes(multiprocessing:int) -> int:
+    """Checking what number of processes has been set and if it is appropriate"""
+    log.info("Checking number of processes...")
+    if multiprocessing > os.cpu_count():
+        multiprocessing = os.cpu_count()
+        log.warning(f"Number of processes too high - changed the number to cpu count: {os.cpu_count()}")
+    log.info("Number of processes is correct and has been set")
+    return multiprocessing
+
+def check_number_of_files(files_count:int) -> None:
+    """Checking what number of files has been set and if it is appropriate"""
+    log.info("Checking number of files...")
+    if files_count == 0:
+        log.warning("Number of files is 0. Printing all the output to the console")
+    log.info("Number of files has been checked")
+
 def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:int, data_lines:int, files_count:int,  path_to_save_files:str) -> None:
     """Coordinate generating all json files"""
     log.info("Starting multiprocessing...")
@@ -558,11 +584,14 @@ def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:i
 
     # Generating multiple .json files in multiple processes
     time_start = time.time() # saving start time to measure execution time
-    log.info(f"Starting generation of json files with multiprocessing. Start time: {time_start}")
+    log.info(f"Starting generation of json files with multiprocessing. "
+             f"Start time: {time.strftime("%H:%M:%S", time.localtime(time_start))}")
     generate_json_files_multiple_processes(split_file_names_list, data_schema, data_lines, files_count,
                                            path_to_save_files)
     log.info(
-        f"Generation of json files has ended. End time: {time.time()}. Multiprocessing execution time: {round(time.time() - time_start, 4)} seconds")
+        f"Generation of json files has ended. "
+        f"End time: {time.strftime("%H:%M:%S", time.localtime(time.time()))}. "
+        f"Multiprocessing execution time: {round(time.time() - time_start, 4)} seconds")
 
 def data_generator():
     """Coordinate data generation"""
@@ -576,11 +605,20 @@ def data_generator():
     # Setting path to save output files
     path_to_save_files = set_path_to_save_files(args_dict["path_to_save_files"])
 
+    # Deleting all files in path_to_save_files that match file_name if needed
+    delete_files_in_save_path(path_to_save_files, args_dict["file_name"], args_dict["clear_path"])
+
     # Reading data schema
     data_schema = read_data_schema(args_dict["data_schema"])
 
     # Generating file names
     file_names = gen_file_names(args_dict["files_count"], args_dict["file_name"], args_dict["file_prefix"], path_to_save_files)
+
+    # Checking number of processes
+    args_dict["multiprocessing"] = check_number_of_processes(args_dict["multiprocessing"])
+
+    # Checking number of files
+    check_number_of_files(args_dict["files_count"])
 
     # Validating data schema
     validate_schema(data_schema)
