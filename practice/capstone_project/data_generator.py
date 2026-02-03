@@ -195,20 +195,20 @@ def setup_parser() -> argparse.ArgumentParser:
 def check_args_dict(args_dict:dict) -> None:
     log.info("Checking if console utility arguments are valid...")
     if args_dict["files_count"] < 0:
-        log.error(f"Number of files can't be negative: {args_dict["files_count"]}")
+        log.error(f"Number of files can't be negative: {args_dict['files_count']}")
         sys.exit(1)
     if args_dict["data_lines"] < 0:
-        log.error(f"Number of lines in file can't be negative: {args_dict["data_lines"]}")
+        log.error(f"Number of lines in file can't be negative: {args_dict['data_lines']}")
         sys.exit(1)
     if args_dict["multiprocessing"] < 0:
-        log.error(f"Number of processes can't be negative: {args_dict["multiprocessing"]}")
+        log.error(f"Number of processes can't be negative: {args_dict['multiprocessing']}")
         sys.exit(1)
     if args_dict["file_name"].count(".") > 1:
-        log.error(f"File name contains more than one '.': {args_dict["file_name"]}")
+        log.error(f"File name contains more than one '.': {args_dict['file_name']}")
         sys.exit(1)
     if "." in args_dict["file_name"] and args_dict["file_name"].count(".") == 1:
         if args_dict["file_name"].split(".")[1] != "json":
-            log.error(f"Incorrect file extension: {args_dict["file_name"]}")
+            log.error(f"Incorrect file extension: {args_dict['file_name']}")
             sys.exit(1)
         else:
             args_dict["file_name"] = args_dict["file_name"].split(".")[0]
@@ -563,7 +563,7 @@ def check_number_of_processes(multiprocessing:int) -> int:
     if multiprocessing > os.cpu_count():
         multiprocessing = os.cpu_count()
         log.warning(f"Number of processes too high - changed the number to cpu count: {os.cpu_count()}")
-    log.info("Number of processes is correct and has been set")
+    log.info(f"Number of processes is correct and has been set: {multiprocessing}")
     return multiprocessing
 
 def check_number_of_files(files_count:int) -> None:
@@ -585,12 +585,12 @@ def generate_json_files_all(file_names:list, data_schema:dict, multiprocessing:i
     # Generating multiple .json files in multiple processes
     time_start = time.time() # saving start time to measure execution time
     log.info(f"Starting generation of json files with multiprocessing. "
-             f"Start time: {time.strftime("%H:%M:%S", time.localtime(time_start))}")
+             f"Start time: {time.strftime('%H:%M:%S', time.localtime(time_start))}")
     generate_json_files_multiple_processes(split_file_names_list, data_schema, data_lines, files_count,
                                            path_to_save_files)
     log.info(
         f"Generation of json files has ended. "
-        f"End time: {time.strftime("%H:%M:%S", time.localtime(time.time()))}. "
+        f"End time: {time.strftime('%H:%M:%S', time.localtime(time.time()))}. "
         f"Multiprocessing execution time: {round(time.time() - time_start, 4)} seconds")
 
 def data_generator():
